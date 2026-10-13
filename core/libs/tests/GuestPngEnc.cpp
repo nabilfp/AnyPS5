@@ -30,6 +30,8 @@ int main() {
     const int memorySize = scePngEncQueryMemorySize(&create);
     Require(memorySize > 0);
     Require(scePngEncQueryMemorySize(nullptr) == invalidAddr);
+    const PngEncCreateParam badSize{sizeof(PngEncCreateParam) - 1, 0, 16, 5};
+    Require(scePngEncQueryMemorySize(&badSize) == invalidSize);
     PngEncCreateParam bad = create;
     bad.attribute = 1;
     Require(scePngEncQueryMemorySize(&bad) == invalidParam);
@@ -45,6 +47,7 @@ int main() {
     std::vector<std::uint64_t> memory((memorySize + 7) / 8);
     void* handle = nullptr;
     Require(scePngEncCreate(&create, nullptr, memorySize, &handle) == invalidAddr);
+    Require(scePngEncCreate(&badSize, memory.data(), memorySize, &handle) == invalidSize);
     Require(scePngEncCreate(&create, memory.data(), memorySize - 1, &handle) == invalidSize);
     Require(scePngEncCreate(&create, memory.data(), memorySize, &handle) == 0 && handle == memory.data());
 

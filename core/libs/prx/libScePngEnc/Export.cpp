@@ -42,6 +42,7 @@ static_assert(sizeof(PngEncOutputInfo) == 8);
 
 int validateCreateParam(const PngEncCreateParam* param) {
     if (!param) return PNG_ENC_ERROR_INVALID_ADDR;
+    if (param->this_size != sizeof(PngEncCreateParam)) return PNG_ENC_ERROR_INVALID_SIZE;
     if (param->attribute != 0 || param->max_filter_number > MAX_FILTER_NUMBER) return PNG_ENC_ERROR_INVALID_PARAM;
     if (param->max_image_width == 0 || param->max_image_width > MAX_IMAGE_WIDTH) return PNG_ENC_ERROR_INVALID_SIZE;
     return 0;
