@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <cerrno>
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <list>
 #include <mutex>
 #include <stdexcept>
@@ -372,7 +374,9 @@ private:
                 }
             }
         }
-        const double real = std::strtod(text.c_str(), nullptr);
+        double real = 0.0;
+        const auto converted = std::from_chars(text.data(), text.data() + text.size(), real);
+        if (converted.ec != std::errc{}) real = std::numeric_limits<double>::infinity();
         if (!std::isfinite(real)) throw std::runtime_error("sce::Json::Parser::parse: number " + text + " overflows a double; the console's behaviour is unverified");
         out.type = TypeReal;
         out.real = real;

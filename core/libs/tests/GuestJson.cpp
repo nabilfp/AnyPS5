@@ -1,9 +1,11 @@
 #include "prx/libc/include/general/VabiMacros.hpp"
+#include <clocale>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -610,6 +612,36 @@ static void StreamParse() {
     _ZN3sce4Json5ValueD1Ev(&root);
 }
 
+static void NumberLocale() {
+    struct RestoreLocale {
+        std::string previous = std::setlocale(LC_NUMERIC, nullptr);
+        ~RestoreLocale() { std::setlocale(LC_NUMERIC, previous.c_str()); }
+    } restore;
+    bool commaLocale = false;
+    for (const char* name : {"French", "French_France.1252", "fr_FR.UTF-8", "de_DE.UTF-8"}) {
+        if (std::setlocale(LC_NUMERIC, name) != nullptr && std::string(std::localeconv()->decimal_point) == ",") {
+            commaLocale = true;
+            break;
+        }
+    }
+    if (!commaLocale) {
+#ifdef _WIN32
+        throw std::runtime_error("No Windows comma-decimal locale available for regression");
+#else
+        std::cout << "Comma-decimal locale regression unavailable on this host\n";
+        return;
+#endif
+    }
+    Value root{};
+    _ZN3sce4Json5ValueC1Ev(&root);
+    const char text[] = "[1.25,0.5e3,-2.5]";
+    Require(_ZN3sce4Json6Parser5parseERNS0_5ValueEPKcm(&root, text, sizeof(text) - 1) == 0);
+    Require(*_ZNK3sce4Json5Value7getRealEv(_ZNK3sce4Json5Value8getValueEm(&root, 0)) == 1.25);
+    Require(*_ZNK3sce4Json5Value7getRealEv(_ZNK3sce4Json5Value8getValueEm(&root, 1)) == 500.0);
+    Require(*_ZNK3sce4Json5Value7getRealEv(_ZNK3sce4Json5Value8getValueEm(&root, 2)) == -2.5);
+    _ZN3sce4Json5ValueD1Ev(&root);
+}
+
 int main() {
     ParseAndRoundTrip();
     NestingDepth();
@@ -622,4 +654,5 @@ int main() {
     InitParameters();
     ValueClear();
     StreamParse();
+    NumberLocale();
 }
