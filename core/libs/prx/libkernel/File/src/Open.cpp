@@ -218,7 +218,11 @@ int OpenInDirectory_nid_no_patch(int directory, const char* path, int flags, std
     int error = 0;
     const char* base = GetDirectoryDescriptorPath_nid_no_patch(directory, &error);
     if (base == nullptr) return SceErrorFromErrno(error);
-    return OpenNative(std::filesystem::path(reinterpret_cast<const char8_t*>(base)) / std::filesystem::path(reinterpret_cast<const char8_t*>(path)), flags, mode);
+    std::filesystem::path native = std::filesystem::path(reinterpret_cast<const char8_t*>(base)) /
+                                   std::filesystem::path(reinterpret_cast<const char8_t*>(path));
+    if ((flags & (SCE_KERNEL_O_ACCMODE | SCE_KERNEL_O_CREAT)) == SCE_KERNEL_O_RDONLY)
+        native = File::PathOrRelinkedModule(native);
+    return OpenNative(native, flags, mode);
 }
 
 int APS5_VABI sceKernelClose(int d) {

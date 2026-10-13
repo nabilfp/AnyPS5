@@ -279,6 +279,13 @@ int main() {
     Require(sceKernelClose(made) == 0);
     Require(openat_nid_postfix(base, "made.bin", SCE_KERNEL_O_WRONLY | SCE_KERNEL_O_CREAT | SCE_KERNEL_O_EXCL, 0644) == -1 && Error() == 17);
     Require(openat_nid_postfix(base, "missing.bin", SCE_KERNEL_O_RDONLY) == -1 && Error() == 2);
+    { std::ofstream out(root / "Plugin.prx.guest.prx"); out << 'g'; }
+    const int relinkedModule = openat_nid_postfix(base, "Plugin.prx", SCE_KERNEL_O_RDONLY);
+    Require(relinkedModule >= 0);
+    char relinkedByte = 0;
+    Require(sceKernelRead(relinkedModule, &relinkedByte, 1) == 1 && relinkedByte == 'g');
+    Require(sceKernelClose(relinkedModule) == 0);
+    Require(openat_nid_postfix(base, "Plugin.prx", SCE_KERNEL_O_WRONLY) == -1 && Error() == 2);
     const auto guestFile = "/" + root.filename().string() + "/file.txt";
     const int absolute = openat_nid_postfix(-1, guestFile.c_str(), SCE_KERNEL_O_RDONLY);
     Require(absolute >= 0 && sceKernelClose(absolute) == 0);
